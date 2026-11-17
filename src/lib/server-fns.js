@@ -73,6 +73,7 @@ export const confirmPurchase = createServerFn({ method: "POST" })
     const session = await stripe.checkout.sessions.retrieve(data.checkoutId);
     if (session.payment_status !== "paid") return { status: "pending", productName };
 
-    await markPaidAndDeliver(record, session.customer_details?.email || "");
+    const err = await markPaidAndDeliver(record, session.customer_details?.email || "");
+    if (err) console.error(`[purchase ${record.checkoutId}] delivery problem: ${err}`);
     return { status: "paid", productName };
   });

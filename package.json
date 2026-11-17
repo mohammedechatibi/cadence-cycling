@@ -8,7 +8,10 @@
     "build": "vite build",
     "lint": "eslint . --quiet",
     "lint:fix": "eslint . --fix",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "db:migrate": "node --env-file-if-exists=.env scripts/migrate.mjs",
+    "db:seed": "node --env-file-if-exists=.env scripts/import.mjs product Product.json && node --env-file-if-exists=.env scripts/import.mjs clip Clip.json",
+    "start": "node --env-file-if-exists=.env .output/server/index.mjs"
   },
   "dependencies": {
     "@hello-pangea/dnd": "^18.0.1",
