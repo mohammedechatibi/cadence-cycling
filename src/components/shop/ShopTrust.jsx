@@ -9,7 +9,7 @@ const FACTS = [
   {
     icon: ShieldCheck,
     title: "Secure checkout",
-    body: "Card details are entered on the Base44 Payments page, never on this site.",
+    body: "Card details are entered on the Stripe checkout page, never on this site.",
   },
   {
     icon: ListChecks,

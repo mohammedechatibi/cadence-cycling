@@ -24,7 +24,10 @@ export const Route = createFileRoute("/api/stripe-webhook")({
           const session = event.data.object;
           if (session.payment_status === "paid") {
             const [record] = await db.select().from(purchases).where(eq(purchases.checkoutId, session.id));
-            if (record) await markPaidAndDeliver(record, session.customer_details?.email || "");
+            if (record) {
+              const err = await markPaidAndDeliver(record, session.customer_details?.email || "");
+              if (err) console.error(`[purchase ${record.checkoutId}] delivery problem: ${err}`);
+            }
           }
         }
         return new Response("ok");
