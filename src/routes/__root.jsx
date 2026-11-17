@@ -2,8 +2,6 @@ import { HeadContent, Outlet, Scripts, createRootRoute } from "@tanstack/react-r
 import { DefaultCatchBoundary } from "@/components/DefaultCatchBoundary";
 import { NotFound } from "@/components/NotFound";
 import { Toaster } from "@/components/ui/sonner";
-import { AuthProvider } from "@/lib/AuthContext";
-import { Base44Scripts } from "base44:document";
 import appCss from "@/index.css?url";
 
 export const Route = createRootRoute({
@@ -19,10 +17,7 @@ export const Route = createRootRoute({
           "What cycling does for your heart, blood sugar, mood, joints and memory, backed by research, with tools for calories, heart-rate zones and a weekly plan.",
       },
     ],
-    // No icon link: the platform adds the app's logo when serving.
-    links: [
-      { rel: "stylesheet", href: appCss },
-    ],
+    links: [{ rel: "stylesheet", href: appCss }],
   }),
   errorComponent: DefaultCatchBoundary,
   notFoundComponent: () => <NotFound />,
@@ -32,10 +27,10 @@ export const Route = createRootRoute({
 
 function RootComponent() {
   return (
-    <AuthProvider>
+    <>
       <Outlet />
       <Toaster />
-    </AuthProvider>
+    </>
   );
 }
 
@@ -46,10 +41,8 @@ function RootDocument({ children }) {
       <head>
         <HeadContent />
       </head>
-      {/* data-react-root: the builder's preview bridge looks for #root and falls back to this. */}
-      <body data-react-root="true">
+      <body>
         {children}
-        <Base44Scripts />
         <Scripts />
       </body>
     </html>

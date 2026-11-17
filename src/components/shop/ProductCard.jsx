@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { ArrowRight, Check, Loader2 } from "lucide-react";
-import { base44 } from "@/api/base44Client";
+import { createCheckout } from "@/lib/checkout";
 import { cn } from "@/lib/utils";
 import { Image } from "@/components/ui/image";
 import { CHECKOUT_STORAGE_KEY } from "@/lib/site";
@@ -24,10 +24,7 @@ export default function ProductCard({ product }) {
     setBuying(true);
     setError("");
     try {
-      const response = await base44.functions.invoke("create-checkout", {
-        productId: product.id,
-      });
-      const data = response?.data ?? response;
+      const data = await createCheckout({ data: { productId: product.id } });
       if (!data?.redirectUrl) throw new Error(data?.error || "checkout_failed");
       if (data.checkoutId) {
         window.sessionStorage.setItem(CHECKOUT_STORAGE_KEY, data.checkoutId);

@@ -6,7 +6,7 @@ import EvidenceList from "@/components/benefits/EvidenceList";
 import { BENEFITS } from "@/lib/benefits";
 
 const BANNER =
-  "https://media.base44.com/images/public/6af3984bf517548003da0788/a4065dca3_generated_image.png";
+  "/images/benefits.png";
 
 export const Route = createFileRoute("/_site/benefits")({
   head: () => ({

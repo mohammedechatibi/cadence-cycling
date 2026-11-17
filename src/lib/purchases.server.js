@@ -1,40 +1,58 @@
-/**
- * Server-only purchase fulfilment, shared by the thank-you confirmation and the
- * payment workflow sweep. Both may run for the same order, so this is idempotent:
- * a record already paid returns early and sends nothing twice.
- * Returns null on success, or a short message describing a delivery problem.
- */
+import { and, eq, ne } from "drizzle-orm";
+import nodemailer from "nodemailer";
+import { db } from "./db.server.js";
+import { purchases } from "../db/schema.js";
+import { renderEmail } from "./email.server.js";
+
+const mailer = nodemailer.createTransport({
+  host: process.env.SMTP_HOST ?? "localhost",
+  port: Number(process.env.SMTP_PORT ?? 1025),
+  auth: process.env.SMTP_USER ? { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS } : undefined,
+});
+
+const from = () => process.env.MAIL_FROM ?? "Cadence <no-reply@localhost>";
+
 export function formatAmount(cents, currency) {
   return `${(Number(cents || 0) / 100).toFixed(2)} ${currency || "EUR"}`;
 }
 
-export async function markPaidAndDeliver(base44, record, purchase) {
-  if (!record || record.status === "paid") return null;
+export async function markPaidAndDeliver(record, buyerEmail) {
+  const res = db.update(purchases)
+    .set({ status: "paid", paidAt: new Date().toISOString(), buyerEmail })
+    .where(and(eq(purchases.id, record.id), ne(purchases.status, "paid")))
+    .run();
+  if (res.changes === 0) return null;
 
-  const buyerEmail = purchase?.buyer_email || "";
+  const productName = record.productName || "Your Cadence plan";
+  const amount = formatAmount(record.amountCents, record.currency);
+  const errors = [];
 
-  await base44.entities.Purchase.update(record.id, {
-    status: "paid",
-    paid_at: new Date().toISOString(),
-    buyer_email: buyerEmail,
-  });
-
-  if (!buyerEmail) return "The provider did not return a buyer email";
-
-  try {
-    await base44.integrations.Core.SendEmail({
-      to: buyerEmail,
-      template_name: "PlanDelivery",
-      variables: {
-        product_name: record.product_name || "Your Cadence plan",
-        amount: formatAmount(record.amount_cents, record.currency),
-        order_id: record.checkout_id,
-      },
-      category: "transactional",
-    });
-    return null;
-  } catch (error) {
-    // The order is already paid; a failed send must not undo that.
-    return error?.message ?? "Plan delivery email failed";
+  if (buyerEmail) {
+    try {
+      await mailer.sendMail({
+        from: from(),
+        to: buyerEmail,
+        subject: "Your Cadence plan is confirmed",
+        html: renderEmail("PlanDelivery", { product_name: productName, amount, order_id: record.checkoutId }),
+      });
+    } catch (e) { errors.push(e?.message ?? "Plan delivery email failed"); }
+  } else {
+    errors.push("No buyer email returned by Stripe");
   }
+
+  if (process.env.ADMIN_EMAIL) {
+    try {
+      await mailer.sendMail({
+        from: from(),
+        to: process.env.ADMIN_EMAIL,
+        subject: `New sale: ${productName}`,
+        html: renderEmail("NewSale", {
+          product_name: productName, amount, buyer_email: buyerEmail || "unknown",
+          sale_time: new Date().toLocaleString("en-GB", { timeZone: "Europe/Berlin" }),
+          order_id: record.checkoutId,
+        }),
+      });
+    } catch (e) { errors.push(e?.message ?? "Sales notification failed"); }
+  }
+  return errors.length ? errors.join("; ") : null;
 }

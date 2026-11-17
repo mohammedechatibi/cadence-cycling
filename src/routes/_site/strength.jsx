@@ -9,7 +9,7 @@ import MythsBand from "@/components/strength/MythsBand";
 import SourcesList from "@/components/strength/SourcesList";
 
 const HERO_IMAGE =
-  "https://media.base44.com/images/public/6af3984bf517548003da0788/7b412f7b2_generated_image.png";
+  "/images/strength.png";
 
 export const Route = createFileRoute("/_site/strength")({
   head: () => ({

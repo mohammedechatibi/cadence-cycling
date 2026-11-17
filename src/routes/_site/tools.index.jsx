@@ -3,7 +3,7 @@ import { ArrowUpRight } from "lucide-react";
 import { Image } from "@/components/ui/image";
 
 const DAWN =
-  "https://media.base44.com/images/public/6af3984bf517548003da0788/6d632ce53_generated_image.png";
+  "/images/tools.png";
 
 const TOOLS = [
   {
